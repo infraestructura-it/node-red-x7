@@ -62,25 +62,52 @@ EOF
 }
 EOF
 
-  # 👉 NUEVO: Inicializar package.json y instalar Node-RED localmente
-  echo "📦 Inicializando entorno Node.js local en .node-red..."
+  # Inicializar entorno Node.js local (opcional, ya que usaremos instalación global)
+  echo "📦 Inicializando entorno Node.js local en .node-red/..."
   cd .node-red || exit 1
   npm init -y
-  npm install node-red
+
+  # Crear settings.js habilitando proyectos
+  echo "⚙️ Configurando settings.js para habilitar proyectos..."
+  cat <<EOF > settings.js
+module.exports = {
+    flowFile: "flows.json",
+    projects: {
+        enabled: true
+    }
+}
+EOF
+
+  # Crear carpeta de proyectos y un proyecto de ejemplo
+  mkdir -p projects/demo
+  echo "🧪 Creando proyecto de ejemplo en 'projects/demo'..."
+  cat <<EOF > projects/demo/flow.json
+[
+  {
+    "id": "inject1",
+    "type": "inject",
+    "name": "Hola desde proyecto",
+    "once": true,
+    "wires": [["debug1"]]
+  },
+  {
+    "id": "debug1",
+    "type": "debug",
+    "name": "Debug del proyecto",
+    "wires": []
+  }
+]
+EOF
+
   cd ../..
 
 else
   echo "❌ Salteando creación de estructura."
 fi
 
-# Confirmar instalación de Node-RED
-read -p "👉 ¿Querés instalar Node-RED globalmente con npm? [s/N]: " instalar
-if [[ "$instalar" =~ ^[sS]$ ]]; then
-  echo "📦 Instalando Node-RED..."
-  npm install -g --unsafe-perm node-red
-else
-  echo "❌ Node-RED no será instalado."
-fi
+# Instalar Node-RED de manera GLOBAL sin preguntar
+echo "📦 Instalando Node-RED globalmente..."
+npm install -g --unsafe-perm node-red
 
 # Confirmar copiar el flujo a ~/.node-red
 read -p "👉 ¿Querés copiar el flujo de ejemplo a ~/.node-red/flows.json? [s/N]: " copiar
