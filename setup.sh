@@ -5,8 +5,8 @@ echo "🚀 Bienvenido al instalador interactivo de Node-RED"
 # Preguntar antes de crear carpetas
 read -p "👉 ¿Querés crear la estructura del proyecto (carpetas y archivos)? [s/N]: " crear
 if [[ "$crear" =~ ^[sS]$ ]]; then
-  mkdir -p nodered-f/.node-red
-  mkdir -p nodered-f/.devcontainer
+  mkdir -p nodered-flujos/.node-red
+  mkdir -p nodered-flujos/.devcontainer
   cd nodered-flujos || exit 1
 
   echo "📄 Creando README.md..."
@@ -62,52 +62,25 @@ EOF
 }
 EOF
 
-  # Inicializar entorno Node.js local (opcional, ya que usaremos instalación global)
-  echo "📦 Inicializando entorno Node.js local en .node-red/..."
+  # Inicializar entorno Node.js local en .node-red
+  echo "📦 Inicializando entorno Node.js local en .node-red..."
   cd .node-red || exit 1
   npm init -y
-
-  # Crear settings.js habilitando proyectos
-  echo "⚙️ Configurando settings.js para habilitar proyectos..."
-  cat <<EOF > settings.js
-module.exports = {
-    flowFile: "flows.json",
-    projects: {
-        enabled: true
-    }
-}
-EOF
-
-  # Crear carpeta de proyectos y un proyecto de ejemplo
-  mkdir -p projects/demo
-  echo "🧪 Creando proyecto de ejemplo en 'projects/demo'..."
-  cat <<EOF > projects/demo/flow.json
-[
-  {
-    "id": "inject1",
-    "type": "inject",
-    "name": "Hola desde proyecto",
-    "once": true,
-    "wires": [["debug1"]]
-  },
-  {
-    "id": "debug1",
-    "type": "debug",
-    "name": "Debug del proyecto",
-    "wires": []
-  }
-]
-EOF
-
+  npm install node-red
   cd ../..
 
 else
   echo "❌ Salteando creación de estructura."
 fi
 
-# Instalar Node-RED de manera GLOBAL sin preguntar
-echo "📦 Instalando Node-RED globalmente..."
-npm install -g --unsafe-perm node-red
+# Confirmar instalación de Node-RED globalmente
+read -p "👉 ¿Querés instalar Node-RED globalmente con npm? [s/N]: " instalar
+if [[ "$instalar" =~ ^[sS]$ ]]; then
+  echo "📦 Instalando Node-RED..."
+  npm install -g --unsafe-perm node-red
+else
+  echo "❌ Node-RED no será instalado."
+fi
 
 # Confirmar copiar el flujo a ~/.node-red
 read -p "👉 ¿Querés copiar el flujo de ejemplo a ~/.node-red/flows.json? [s/N]: " copiar
@@ -126,8 +99,32 @@ if [[ "$gitinit" =~ ^[sS]$ ]]; then
   git init
   git add .
   git commit -m "🚀 Proyecto inicial de Node-RED"
+  cd ..
 else
   echo "❌ No se inicializa Git."
 fi
 
+# Confirmar modificación de settings.js para habilitar modo "proyectos"
+read -p "👉 ¿Querés habilitar el modo 'proyectos' en settings.js? [s/N]: " habilitar_proyectos
+if [[ "$habilitar_proyectos" =~ ^[sS]$ ]]; then
+  echo "🛠 Configurando Node-RED para habilitar modo 'proyectos'..."
+
+  SETTINGS_FILE="$HOME/.node-red/settings.js"
+
+  if [[ -f "$SETTINGS_FILE" ]]; then
+    if grep -q "projects: { enabled: false }" "$SETTINGS_FILE"; then
+      sed -i 's/projects: { enabled: false }/projects: { enabled: true }/' "$SETTINGS_FILE"
+      echo "✅ Modo 'proyectos' habilitado en settings.js."
+    else
+      echo "⚠️ No se encontró una línea exacta para modificar o ya está habilitado. Verificá manualmente si es necesario."
+    fi
+  else
+    echo "❌ settings.js no encontrado en ~/.node-red"
+    echo "🔁 Iniciá Node-RED al menos una vez para generar la configuración inicial."
+  fi
+else
+  echo "❌ No se modificará settings.js."
+fi
+
 echo "✅ Proceso finalizado. Ejecutá 'node-red' para iniciar si lo instalaste."
+
